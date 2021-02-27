@@ -5,9 +5,9 @@ const useFetch = (url) => {
     const [isPending, setIsPending] = useState(true);
     const [error, setErrorMessage] = useState(null);
     useEffect(() => {
-        fetch(url)
+        const abortControl = new AbortController();
+        fetch(url, { signal: abortControl.signal })
             .then(res => {
-                console.log(res);
                 if (!res.ok) {
                     throw Error('Unable to load data from the resource')
                 }
@@ -19,9 +19,14 @@ const useFetch = (url) => {
                 setErrorMessage(null);
             })
             .catch(err => {
+                if(err.name === "AbortError"){
+                    return null;
+                }
                 setIsPending(false);
                 setErrorMessage(err.message);
             })
+
+        return () => abortControl.abort();
     }, [url]);
 
     return { data, isPending, error }
